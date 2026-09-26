@@ -5,11 +5,12 @@ import {
   Search, Plus, Heart, ThumbsDown, MessageSquare, Repeat2, Share2, MoreHorizontal,
   Shield, BarChart3, Video, Mic, Newspaper, Calendar, Hash
 } from 'lucide-react'
-import { INTERESTS, SUGGESTED, SEED_POSTS, CHANNELS, COMMUNITIES, PLANS } from './data'
+import { INTERESTS, PLANS } from './data'
 import { loadSession, saveSession, clearSession, ageFromDob, usernameOk } from './store'
 import AdminApp from './Admin.jsx'
 import { EXTRA_PAGES } from './pages.js'
 import { HelpCenter, DocsSite, CatalogPage } from './HelpDocs.jsx'
+import { Tick } from './Tick.jsx'
 
 function Logo({ size = 28 }) {
   return (
@@ -49,7 +50,7 @@ function Landing() {
     saveSession({
       user: {
         first: 'Guest', last: p, nick: p, handle: p + 'user',
-        interests: ['Technology', 'Programming'], follows: SUGGESTED.slice(0, 4).map(s => s.id),
+        interests: ['Technology', 'Programming'], follows: [],
         email: `${p}@chatra.app`, oauth: p,
       },
       onboardingStep: 7,
@@ -69,7 +70,7 @@ function Login() {
     if (!email || !pw) { setErr('Email and password required'); return }
     if (s?.user?.email && s.user.email !== email) { setErr('No account for this email'); return }
     if (!s) {
-      saveSession({ user: { email, first: 'You', last: '', handle: 'you', interests: [], follows: SUGGESTED.slice(0,4).map(x=>x.id) } })
+      saveSession({ user: { email, first: 'You', last: '', handle: 'you', interests: [], follows: [] } })
     }
     nav('/home')
   }
@@ -212,15 +213,7 @@ function Signup() {
           <>
             <h1 style={{ fontSize: '1.6rem' }}>Discover people</h1>
             <p className="sub">Follow at least 4 accounts. Following: {form.follows.length}</p>
-            {SUGGESTED.map(a => (
-              <div key={a.id} className="card" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div><b>{a.name}</b> @{a.handle}<div className="muted">{a.bio}</div></div>
-                <button type="button" className={`chip ${form.follows.includes(a.id)?'on':''}`}
-                  onClick={() => set('follows', form.follows.includes(a.id) ? form.follows.filter(x=>x!==a.id) : [...form.follows, a.id])}>
-                  {form.follows.includes(a.id) ? 'Following ✓' : 'Follow'}
-                </button>
-              </div>
-            ))}
+            <DiscoverPeople form={form} set={set} />
           </>
         )}
         {step === 7 && (
@@ -283,18 +276,7 @@ function Shell({ children }) {
           <Search size={16} />
           <input readOnly placeholder="Search people, posts, channels" />
         </div>
-        <div className="card" style={{marginTop:16}}>
-          <b>Trending with quality</b>
-          <p className="muted" style={{marginTop:8}}>#javascript · growth + quality filter</p>
-          <p className="muted">#kigali · geo relevance</p>
-          <p className="muted">#chatra · freshness</p>
-        </div>
-        <div className="card">
-          <b>Who to follow</b>
-          {SUGGESTED.slice(0,3).map(a => (
-            <p key={a.id} style={{marginTop:8}}>@{a.handle} <span className="muted">{a.topic}</span></p>
-          ))}
-        </div>
+        <WhoToFollow />
       </aside>
       {createOpen && <CreateModal onClose={() => setCreateOpen(false)} />}
     </div>
@@ -327,27 +309,69 @@ function CreateModal({ onClose }) {
   )
 }
 
-function Tick({ kind }) {
-  if (!kind) return null
-  return <span className={`badge ${kind}`} title={kind + ' verification'} />
+function WhoToFollow() {
+  const [people, setPeople] = useState([])
+  const [topics, setTopics] = useState([])
+  useEffect(() => {
+    fetch('/api/search?q=')
+      .then(r => r.ok ? r.json() : {})
+      .then(d => {
+        setPeople((d.people || []).slice(0, 4))
+        setTopics([...new Set((d.posts || []).map(p => p.topic))].slice(0, 5))
+      })
+      .catch(() => {})
+  }, [])
+  return (
+    <>
+      <div className="card" style={{marginTop:16}}>
+        <b>What’s happening</b>
+        {topics.length ? topics.map(t => <p key={t} className="muted" style={{marginTop:8}}>#{String(t).toLowerCase()}</p>) : <p className="muted" style={{marginTop:8}}>Live topics appear as people post.</p>}
+      </div>
+      <div className="card">
+        <b>Who to follow</b>
+        {people.map(a => (
+          <p key={a.id} style={{marginTop:8,display:'flex',alignItems:'center',gap:4}}>
+            @{a.handle} <Tick kind={a.verified} size={16} />
+          </p>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function DiscoverPeople({ form, set }) {
+  const [people, setPeople] = useState([])
+  useEffect(() => {
+    fetch('/api/search?q=')
+      .then(r => r.ok ? r.json() : { people: [] })
+      .then(d => setPeople((d.people || []).slice(0, 12)))
+      .catch(() => setPeople([]))
+  }, [])
+  if (!people.length) return <p className="muted">Loading accounts from Chatra…</p>
+  return people.map(a => (
+    <div key={a.id} className="card" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div><b>{a.name}</b> <Tick kind={a.verified} /> @{a.handle}<div className="muted">{a.bio}</div></div>
+      <button type="button" className={`chip ${form.follows.includes(a.id)?'on':''}`}
+        onClick={() => set('follows', form.follows.includes(a.id) ? form.follows.filter(x=>x!==a.id) : [...form.follows, a.id])}>
+        {form.follows.includes(a.id) ? 'Following' : 'Follow'}
+      </button>
+    </div>
+  ))
 }
 
 function HomeFeed() {
   const session = loadSession()
   const user = session?.user
   const [tab, setTab] = useState('For You')
-  const [posts, setPosts] = useState(() => {
-    const extra = JSON.parse(localStorage.getItem('chatra.posts') || '[]')
-    return [...extra, ...SEED_POSTS]
-  })
+  const [posts, setPosts] = useState(() => JSON.parse(localStorage.getItem('chatra.posts') || '[]'))
   useEffect(() => {
-    fetch('/api/feed?user=' + encodeURIComponent(user?.handle || 'chatra'))
+    fetch('/api/feed?user=' + encodeURIComponent(user?.handle || ''))
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d?.feed) return
-        const mapped = d.feed.slice(0, 12).map(p => ({
+        const mapped = d.feed.map(p => ({
           id: p.id,
-          author: { name: p.handle, handle: p.handle, id: p.authorId },
+          author: { name: p.name || p.handle, handle: p.handle, id: p.authorId, verified: p.verified },
           text: p.text,
           likes: p.likes,
           dislikes: p.dislikes,
@@ -357,7 +381,7 @@ function HomeFeed() {
           topic: p.topic,
         }))
         const extra = JSON.parse(localStorage.getItem('chatra.posts') || '[]')
-        setPosts([...extra, ...mapped, ...SEED_POSTS])
+        setPosts([...extra, ...mapped])
       })
       .catch(() => {})
   }, [])
@@ -431,7 +455,16 @@ function HomeFeed() {
 function Explore() {
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('Trending')
-  const people = SUGGESTED.filter(s => (s.name+s.handle).toLowerCase().includes(q.toLowerCase()))
+  const [res, setRes] = useState({ people: [], channels: [], posts: [] })
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetch('/api/search?q=' + encodeURIComponent(q))
+        .then(r => r.ok ? r.json() : {})
+        .then(d => setRes({ people: d.people || [], channels: d.channels || [], posts: d.posts || [] }))
+        .catch(() => {})
+    }, 150)
+    return () => clearTimeout(t)
+  }, [q])
   return (
     <div className="page">
       <h2 className="page-title">Explore</h2>
@@ -441,8 +474,9 @@ function Explore() {
           <button key={t} className={tab===t?'on':''} onClick={()=>setTab(t)}>{t}</button>
         ))}
       </div>
-      {people.map(a => <div key={a.id} className="card"><b>{a.name}</b> @{a.handle}<div className="muted">{a.bio}</div></div>)}
-      {CHANNELS.map(c => <div key={c.id} className="card">#{c.handle} · {c.cat}<div className="muted">Discovery by quality, not luck.</div></div>)}
+      {res.people.map(a => <div key={a.id} className="card"><b>{a.name}</b> <Tick kind={a.verified} /> @{a.handle}<div className="muted">{a.bio}</div></div>)}
+      {res.channels.map(c => <div key={c.id} className="card">@{c.handle} · {c.category}</div>)}
+      {res.posts.map(p => <div key={p.id} className="card">{p.text}</div>)}
     </div>
   )
 }
@@ -450,13 +484,13 @@ function Explore() {
 function Messages() {
   const [sel, setSel] = useState('req')
   const [text, setText] = useState('')
-  const [msgs, setMsgs] = useState([{ me:false, t:'Hey — this is a message request from @lenslight' }])
+  const [msgs, setMsgs] = useState([])
   return (
     <div className="msg-row">
       <div style={{borderRight:'1px solid var(--line)'}}>
         <div className="page" style={{paddingBottom:8}}><h2 className="page-title">Messages</h2></div>
-        <div className={`conv ${sel==='req'?'on':''}`} onClick={()=>setSel('req')}>Message Requests · @lenslight</div>
-        <div className={`conv ${sel==='g'?'on':''}`} onClick={()=>setSel('g')}>Group · JS Nightly</div>
+        <div className={`conv ${sel==='req'?'on':''}`} onClick={()=>setSel('req')}>Message Requests</div>
+        <div className={`conv ${sel==='g'?'on':''}`} onClick={()=>setSel('g')}>Groups</div>
       </div>
       <div className="page">
         <p className="muted">Accept · Delete · Block · Report</p>
@@ -500,22 +534,37 @@ function Bookmarks() {
 }
 
 function Communities() {
+  const [list, setList] = useState([])
+  useEffect(() => {
+    fetch('/api/search?q=')
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setList((d.channels || []).slice(0, 20)))
+      .catch(() => {})
+  }, [])
   return (
     <div className="page">
       <h2 className="page-title">Communities</h2>
-      {COMMUNITIES.map(c => <div key={c.id} className="card"><b>{c.name}</b><div className="muted">{c.members.toLocaleString()} members · rules · events · chat</div></div>)}
+      {!list.length && <p className="muted">Communities appear as channels form.</p>}
+      {list.map(c => <div key={c.id} className="card"><b>{c.name}</b><div className="muted">{c.category}</div></div>)}
     </div>
   )
 }
 
 function Channels() {
+  const [list, setList] = useState([])
+  useEffect(() => {
+    fetch('/api/search?q=')
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setList(d.channels || []))
+      .catch(() => {})
+  }, [])
   return (
     <div className="page">
       <h2 className="page-title">Channels</h2>
-      {CHANNELS.map(c => (
+      {list.map(c => (
         <div key={c.id} className="card">
           <b>{c.name}</b> @{c.handle}
-          <div className="muted">Quality {c.health.quality} · Satisfaction {c.health.satisfaction} · Policy {c.health.policy} · Spam risk {c.health.spam}</div>
+          <div className="muted">Quality {c.quality} · Policy {c.policy} · Spam risk {c.spam}</div>
         </div>
       ))}
       <NavLink className="btn btn-primary" to="/studio" style={{marginTop:12}}>Open Chatra Studio</NavLink>
@@ -532,7 +581,7 @@ function Profile() {
       <div className="profile-banner" />
       <div className="profile-head">
         <div className="avatar" style={{width:72,height:72,fontSize:24}}>{(user.handle||'Y')[0].toUpperCase()}</div>
-        <h2>{user.nick || user.first} <Tick kind={user.planTick} /></h2>
+        <h2 style={{display:'flex',alignItems:'center'}}>{user.nick || user.first} <Tick kind={user.planTick || user.verified} size={22} /></h2>
         <p className="muted">@{user.handle} · Joined 2026 · Followers 4 · Following {user.follows?.length||0}</p>
         <p>{user.bio || 'Bio not set. Date of birth and income stay private.'}</p>
       </div>
@@ -572,7 +621,7 @@ function Studio() {
     <div className="page">
       <h2 className="page-title">Chatra Studio</h2>
       <div className="stat-grid">
-        {[['Views','12.4k'],['Followers','1,902'],['Watch time','88h'],['Engagement','6.2%'],['Revenue','Coming Soon']].map(([k,v])=>(
+        {[['Views','0'],['Followers','0'],['Watch time','0h'],['Engagement','0%'],['Revenue','Coming Soon']].map(([k,v])=>(
           <div key={k} className="stat"><span className="muted">{k}</span><b>{v}</b></div>
         ))}
       </div>
@@ -585,14 +634,25 @@ function Studio() {
 }
 
 function Plans() {
+  const nav = useNavigate()
+  function take(p) {
+    const s = loadSession()
+    if (!s?.user) return
+    s.user.planTick = p.tick
+    s.user.verified = p.tick
+    s.user.planId = p.id
+    saveSession(s)
+    nav('/profile')
+  }
   return (
     <div className="page">
       <h2 className="page-title">Verification & plans</h2>
       <p className="muted">Payment raises distribution eligibility. It never forces content onto people who do not want it.</p>
       {PLANS.map(p => (
         <div key={p.id} className="card">
-          <b>{p.name}</b> <Tick kind={p.tick} /> · ${p.monthly}/mo or ${p.annual}/yr ({p.discount} off)
+          <b style={{display:'inline-flex',alignItems:'center'}}>{p.name} <Tick kind={p.tick} size={22} /></b> · ${p.monthly}/mo or ${p.annual}/yr ({p.discount} off)
           <ul className="muted">{p.perks.map(x => <li key={x}>{x}</li>)}</ul>
+          <button className="chip" onClick={() => take(p)}>Use this tick</button>
         </div>
       ))}
     </div>

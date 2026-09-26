@@ -37,7 +37,10 @@ app.get('/sitemap.xml', (_, res) => {
 app.get('/api/feed', (req, res) => {
   const user = db.users.find(u => u.handle === (req.query.user || 'chatra')) || db.users[0]
   const weights = weightsByUser.get(user.id) || {}
-  const feed = rankFeed({ posts: db.posts, user, weights, limit: Number(req.query.limit) || 30 })
+  const feed = rankFeed({ posts: db.posts, user, weights, limit: Number(req.query.limit) || 30 }).map(p => {
+    const author = db.users.find(u => u.id === p.authorId)
+    return { ...p, name: author?.name || p.handle, verified: author?.verified || null }
+  })
   res.json({ feed })
 })
 
