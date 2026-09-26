@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { INTERESTS, SUGGESTED, SEED_POSTS, CHANNELS, COMMUNITIES, PLANS } from './data'
 import { loadSession, saveSession, clearSession, ageFromDob, usernameOk } from './store'
+import AdminApp from './Admin.jsx'
 
 function Logo({ size = 28 }) {
   return (
@@ -32,6 +33,7 @@ function Landing() {
         <p className="legal">
           <a href="/legal/terms">Terms</a> · <a href="/legal/privacy">Privacy</a> · <a href="/legal/guidelines">Community Guidelines</a>
           <br /><a href="/help">Help / support</a> · <a href="/login">Forgot password</a>
+          <br /><a href="/admin">Admin dashboard</a>
         </p>
       </div>
     </div>
@@ -519,9 +521,10 @@ function Settings() {
   return (
     <div className="page">
       <h2 className="page-title">Settings</h2>
-      {['Account','Channel','Customization','Chatra Studio','Privacy','Security','Notifications','Verification','Billing','Accessibility','Language','Download my data','Delete account'].map(s => (
+      {['Account','Channel','Customization','Chatra Studio','Privacy','Security','Notifications','Verification','Billing','Admin dashboard','Accessibility','Language','Download my data','Delete account'].map(s => (
         <div key={s} className="card" style={{cursor:'pointer'}} onClick={() => {
           if (s==='Chatra Studio') nav('/studio')
+          if (s==='Admin dashboard') nav('/admin')
           if (s==='Verification' || s==='Billing') nav('/plans')
           if (s==='Privacy') nav('/privacy')
           if (s==='Security') nav('/security')
@@ -639,18 +642,6 @@ function Compose({ kind }) {
   )
 }
 
-function Admin() {
-  return (
-    <div className="page">
-      <h2 className="page-title">Admin</h2>
-      <div className="stat-grid">
-        {['Users','Channels','Reports','Appeals','DAU','Revenue'].map(k => <div key={k} className="stat"><span className="muted">{k}</span><b>—</b></div>)}
-      </div>
-      <div className="card">Moderation queue: High / Medium / Low · evidence · audit trail. Coordinated reports trigger review, not automatic guilt.</div>
-    </div>
-  )
-}
-
 export default function App() {
   return (
     <Routes>
@@ -675,7 +666,7 @@ export default function App() {
       <Route path="/privacy" element={<RequireAuth><Shell><Privacy /></Shell></RequireAuth>} />
       <Route path="/security" element={<RequireAuth><Shell><Security /></Shell></RequireAuth>} />
       <Route path="/delete" element={<RequireAuth><Shell><DeleteAccount /></Shell></RequireAuth>} />
-      <Route path="/admin" element={<RequireAuth><Shell><Admin /></Shell></RequireAuth>} />
+      <Route path="/admin/*" element={<AdminApp />} />
       <Route path="/compose/post" element={<RequireAuth><Shell><Compose kind="Post" /></Shell></RequireAuth>} />
       <Route path="/compose/video" element={<RequireAuth><Shell><Compose kind="Video / Reel" /></Shell></RequireAuth>} />
       <Route path="/compose/live" element={<RequireAuth><Shell><Compose kind="Go Live" /></Shell></RequireAuth>} />
