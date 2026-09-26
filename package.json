@@ -1,21 +1,16 @@
 {
   "name": "chatra",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "version": "0.2.0",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server"
   },
-  "dependencies": {
-    "lucide-react": "^0.468.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
-  },
+  "workspaces": ["client", "server"],
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.11"
+    "concurrently": "^9.1.0"
   }
 }

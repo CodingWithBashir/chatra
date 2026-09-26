@@ -8,6 +8,7 @@ import {
 import { INTERESTS, SUGGESTED, SEED_POSTS, CHANNELS, COMMUNITIES, PLANS } from './data'
 import { loadSession, saveSession, clearSession, ageFromDob, usernameOk } from './store'
 import AdminApp from './Admin.jsx'
+import { EXTRA_PAGES } from './pages.js'
 
 function Logo({ size = 28 }) {
   return (
@@ -335,6 +336,27 @@ function HomeFeed() {
     const extra = JSON.parse(localStorage.getItem('chatra.posts') || '[]')
     return [...extra, ...SEED_POSTS]
   })
+  useEffect(() => {
+    fetch('/api/feed?user=' + encodeURIComponent(user?.handle || 'chatra'))
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.feed) return
+        const mapped = d.feed.slice(0, 12).map(p => ({
+          id: p.id,
+          author: { name: p.handle, handle: p.handle, id: p.authorId },
+          text: p.text,
+          likes: p.likes,
+          dislikes: p.dislikes,
+          comments: p.comments,
+          type: p.type === 'video' ? 'video' : 'post',
+          why: p.why,
+          topic: p.topic,
+        }))
+        const extra = JSON.parse(localStorage.getItem('chatra.posts') || '[]')
+        setPosts([...extra, ...mapped, ...SEED_POSTS])
+      })
+      .catch(() => {})
+  }, [])
   const [draft, setDraft] = useState('')
   const [weights, setWeights] = useState(() => JSON.parse(localStorage.getItem('chatra.weights') || '{}'))
   const tabs = ['For You','Following','Latest','Media','Videos','Channels']
@@ -675,6 +697,9 @@ export default function App() {
       <Route path="/compose/article" element={<RequireAuth><Shell><Compose kind="Article" /></Shell></RequireAuth>} />
       <Route path="/compose/voice" element={<RequireAuth><Shell><Compose kind="Voice Post" /></Shell></RequireAuth>} />
       <Route path="/compose/event" element={<RequireAuth><Shell><Compose kind="Event" /></Shell></RequireAuth>} />
+      {EXTRA_PAGES.map(([path, title]) => (
+        <Route key={path} path={path} element={<RequireAuth><Shell><div className="page"><h2 className="page-title">{title}</h2><p className="muted">Live Chatra page. Same design system, unique URL for speed + crawl coverage.</p></div></Shell></RequireAuth>} />
+      ))}
     </Routes>
   )
 }

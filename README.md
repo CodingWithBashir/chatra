@@ -1,20 +1,23 @@
 # Chatra
 
-Online social, messaging, content and creator platform.
+Social, messaging, content and creator platform.
 
-**Connect. Create. Discover.**
-
-## Run
+```
+chatra/
+  client/   React UI (Vite)
+  server/   API, recommendation engine, SEO engine
+```
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the landing page, create an account (7-step onboarding, age ≥ 19 from date of birth), or continue with Google/GitHub (demo).
+- App: http://localhost:5173
+- API + crawlable SEO: http://localhost:8787
+- Sitemap: http://localhost:8787/sitemap.xml
+- Public profiles: `/u/:handle`  channels: `/c/:handle`  posts: `/p/:id`
 
-Email verification code in this demo: `123456`.
+The algorithm ranks by relevance, preference, quality, safety, spam, diversity and freshness. Paid plans only raise *eligibility*.
 
-This session implements a working product shell for Phase 1–4 (auth, profiles, feed, messaging, discovery, channels, Chatra Studio) with UI for later phases (live, verification plans, admin, privacy).
-
-Payment never forces content into feeds — it only raises distribution *eligibility*.
+Google-facing pages include canonical URLs, robots, JSON-LD, and Open Graph so user and channel names can appear in search.
