@@ -23,15 +23,20 @@ function Landing() {
   const nav = useNavigate()
   return (
     <div className="app-bg landing">
+      <div style={{display:'grid',placeItems:'center',minHeight:'100vh'}}>
+        <div className="logo-mark" style={{width:280,height:280,fontSize:160,margin:0}}>C</div>
+      </div>
       <div className="landing-card">
-        <Logo size={52} />
-        <h1>Connect.<br />Create.<br />Discover.</h1>
-        <p className="sub">Chatra is a social, messaging and creator platform — not a cloned feed.</p>
-        <button className="btn btn-primary" onClick={() => nav('/login')}>Log in</button>
-        <button className="btn btn-ghost" onClick={() => nav('/signup')}>Create account</button>
-        <div className="or">OR</div>
+        <Logo size={44} />
+        <h1>Happening now</h1>
+        <p className="sub" style={{fontSize:28,fontWeight:700,color:'#e7e9ea',margin:'24px 0 20px'}}>Join Chatra today.</p>
         <button className="btn btn-oauth" onClick={() => quickOauth('google')}>Continue with Google</button>
         <button className="btn btn-oauth" onClick={() => quickOauth('github')}>Continue with GitHub</button>
+        <div className="or">OR</div>
+        <button className="btn btn-primary" onClick={() => nav('/signup')}>Create account</button>
+        <p className="legal" style={{textAlign:'left'}}>By signing up you agree to the Terms, Privacy Policy and Community Guidelines.</p>
+        <p className="sub" style={{marginTop:36,fontWeight:700,color:'#e7e9ea'}}>Already have an account?</p>
+        <button className="btn btn-ghost" onClick={() => nav('/login')}>Log in</button>
         <p className="legal">
           <a href="/legal/terms">Terms</a> · <a href="/legal/privacy">Privacy</a> · <a href="/legal/guidelines">Community Guidelines</a>
           <br /><a href="/help">Help / support</a> · <a href="/login">Forgot password</a>
@@ -264,15 +269,13 @@ function Shell({ children }) {
   return (
     <div className="app-bg shell">
       <aside className="nav">
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:18,padding:'0 8px'}}>
-          <Logo size={36} /><span className="label" style={{fontWeight:800,letterSpacing:'.04em'}}>CHATRA</span>
-        </div>
+        <NavLink to="/home" style={{padding:'12px',display:'inline-flex'}}><Logo size={32} /></NavLink>
         {items.map(([to, Icon, label]) => (
           <NavLink key={to} to={to} className={({isActive}) => isActive || (to==='/home' && loc.pathname==='/') ? 'active' : ''}>
             <Icon size={20} /><span className="label">{label}</span>
           </NavLink>
         ))}
-        <button className="create-plus" onClick={() => setCreateOpen(true)}><Plus size={18} /> <span className="label">Create</span></button>
+        <button className="create-plus" onClick={() => setCreateOpen(true)}><span className="label">Post</span></button>
       </aside>
       <main className="main">{children}</main>
       <aside className="rail">
@@ -397,8 +400,10 @@ function HomeFeed() {
         {tabs.map(t => <button key={t} className={tab===t?'on':''} onClick={()=>setTab(t)}>{t}</button>)}
       </div>
       <div className="composer">
-        <textarea placeholder="Share something on Chatra…" value={draft} onChange={e=>setDraft(e.target.value)} />
-        <button className="btn btn-primary" style={{width:'auto'}} onClick={publish}>Post</button>
+        <textarea placeholder="What's happening?" value={draft} onChange={e=>setDraft(e.target.value)} />
+        <div style={{display:'flex',justifyContent:'flex-end'}}>
+          <button className="btn btn-primary" style={{width:'auto',background:'#1d9bf0',color:'#fff',padding:'8px 16px'}} onClick={publish}>Post</button>
+        </div>
       </div>
       {filtered.map(p => (
         <article key={p.id} className="post">
