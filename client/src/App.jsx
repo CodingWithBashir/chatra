@@ -9,6 +9,7 @@ import { INTERESTS, SUGGESTED, SEED_POSTS, CHANNELS, COMMUNITIES, PLANS } from '
 import { loadSession, saveSession, clearSession, ageFromDob, usernameOk } from './store'
 import AdminApp from './Admin.jsx'
 import { EXTRA_PAGES } from './pages.js'
+import { HelpCenter, DocsSite, CatalogPage } from './HelpDocs.jsx'
 
 function Logo({ size = 28 }) {
   return (
@@ -34,7 +35,7 @@ function Landing() {
         <p className="legal">
           <a href="/legal/terms">Terms</a> · <a href="/legal/privacy">Privacy</a> · <a href="/legal/guidelines">Community Guidelines</a>
           <br /><a href="/help">Help / support</a> · <a href="/login">Forgot password</a>
-          <br /><a href="/admin">Admin dashboard</a>
+          <br /><a href="/docs">docs.chatra.app</a> · <a href="/admin">Admin dashboard</a>
         </p>
       </div>
     </div>
@@ -513,6 +514,7 @@ function Channels() {
         </div>
       ))}
       <NavLink className="btn btn-primary" to="/studio" style={{marginTop:12}}>Open Chatra Studio</NavLink>
+      <p style={{marginTop:12}}><NavLink to="/studio/dashboard/overview">Studio pages</NavLink></p>
     </div>
   )
 }
@@ -555,6 +557,7 @@ function Settings() {
       ))}
       <button className="btn btn-ghost" onClick={() => { clearSession(); nav('/') }}>Log out</button>
       <p className="muted" style={{marginTop:12}}>Signed in as @{user?.handle}</p>
+      <p style={{marginTop:8}}><a href="/settings/account/display-name">All account settings</a> · <a href="/docs">Docs</a></p>
     </div>
   )
 }
@@ -670,7 +673,9 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/help" element={<Legal title="Help" body="Support center placeholder. Account, safety, creators." />} />
+      <Route path="/help" element={<HelpCenter />} />
+      <Route path="/docs/*" element={<DocsSite />} />
+      <Route path="/docs" element={<DocsSite />} />
       <Route path="/legal/terms" element={<Legal title="Terms of Service" body="Use Chatra lawfully. Do not manipulate distribution or impersonate others." />} />
       <Route path="/legal/privacy" element={<Legal title="Privacy Policy" body="DOB, phone and income are private by default. You can download or delete your data." />} />
       <Route path="/legal/guidelines" element={<Legal title="Community Guidelines" body="No spam, scams, harassment, or coordinated abuse." />} />
@@ -697,8 +702,8 @@ export default function App() {
       <Route path="/compose/article" element={<RequireAuth><Shell><Compose kind="Article" /></Shell></RequireAuth>} />
       <Route path="/compose/voice" element={<RequireAuth><Shell><Compose kind="Voice Post" /></Shell></RequireAuth>} />
       <Route path="/compose/event" element={<RequireAuth><Shell><Compose kind="Event" /></Shell></RequireAuth>} />
-      {EXTRA_PAGES.map(([path, title]) => (
-        <Route key={path} path={path} element={<RequireAuth><Shell><div className="page"><h2 className="page-title">{title}</h2><p className="muted">Live Chatra page. Same design system, unique URL for speed + crawl coverage.</p></div></Shell></RequireAuth>} />
+      {EXTRA_PAGES.map((p) => (
+        <Route key={p.path} path={p.path} element={<RequireAuth><Shell><CatalogPage page={p} /></Shell></RequireAuth>} />
       ))}
     </Routes>
   )
