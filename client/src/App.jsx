@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { NavLink, Route, Routes, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import {
   Home, Compass, MessageCircle, Bell, Bookmark, Users, Radio, User, Settings as SettingsIcon,
-  Search, Plus, Heart, ThumbsDown, MessageSquare, Repeat2, Share2, MoreHorizontal,
+  Search, Plus, Heart, ThumbsDown, MessageSquare, Repeat2, Share2, MoreHorizontal, List, Sparkles, Image, Smile, MapPin, Calendar, BarChart2,
   Shield, BarChart3, Video, Mic, Newspaper, Calendar, Hash
 } from 'lucide-react'
 import { INTERESTS, PLANS } from './data'
@@ -11,6 +11,7 @@ import AdminApp from './Admin.jsx'
 import { EXTRA_PAGES } from './pages.js'
 import { HelpCenter, DocsSite, CatalogPage } from './HelpDocs.jsx'
 import { Tick } from './Tick.jsx'
+import { SettingsHub, ListsPage, PremiumPage } from './SettingsX.jsx'
 
 function Logo({ size = 28 }) {
   return (
@@ -34,10 +35,10 @@ function Landing() {
         <button className="btn btn-oauth" onClick={() => quickOauth('google')}>Continue with Google</button>
         <button className="btn btn-oauth" onClick={() => quickOauth('github')}>Continue with GitHub</button>
         <div className="or">OR</div>
-        <button className="btn btn-primary" onClick={() => nav('/signup')}>Create account</button>
-        <p className="legal" style={{textAlign:'left'}}>By signing up you agree to the Terms, Privacy Policy and Community Guidelines.</p>
+        <button className="btn btn-blue" onClick={() => nav('/signup')}>Create account</button>
+        <p className="legal" style={{textAlign:'left'}}>By signing up, you agree to the <a href="/legal/terms">Terms of Service</a> and <a href="/legal/privacy">Privacy Policy</a>.</p>
         <p className="sub" style={{marginTop:36,fontWeight:700,color:'#e7e9ea'}}>Already have an account?</p>
-        <button className="btn btn-ghost" onClick={() => nav('/login')}>Log in</button>
+        <button className="btn btn-ghost" onClick={() => nav('/login')}>Sign in</button>
         <p className="legal">
           <a href="/legal/terms">Terms</a> · <a href="/legal/privacy">Privacy</a> · <a href="/legal/guidelines">Community Guidelines</a>
           <br /><a href="/help">Help / support</a> · <a href="/login">Forgot password</a>
@@ -248,36 +249,63 @@ function Shell({ children }) {
   const nav = useNavigate()
   const loc = useLocation()
   const [createOpen, setCreateOpen] = useState(false)
+  const [more, setMore] = useState(false)
+  const user = loadSession()?.user
+  const hideRail = loc.pathname.startsWith('/settings') || loc.pathname.startsWith('/plans')
   const items = [
     ['/home', Home, 'Home'],
-    ['/explore', Compass, 'Explore'],
-    ['/messages', MessageCircle, 'Messages'],
+    ['/explore', Search, 'Explore'],
     ['/notifications', Bell, 'Notifications'],
+    ['/messages', MessageCircle, 'Messages'],
+    ['/lists', List, 'Lists'],
     ['/bookmarks', Bookmark, 'Bookmarks'],
     ['/communities', Users, 'Communities'],
-    ['/channels', Radio, 'Channels'],
+    ['/plans', Sparkles, 'Premium'],
     ['/profile', User, 'Profile'],
-    ['/settings', SettingsIcon, 'Settings'],
   ]
   return (
-    <div className="app-bg shell">
-      <aside className="nav">
+    <div className="app-bg shell" style={hideRail ? { gridTemplateColumns: '275px minmax(0,990px)' } : undefined}>
+      <aside className="nav" style={{ display: 'flex', flexDirection: 'column' }}>
         <NavLink to="/home" style={{padding:'12px',display:'inline-flex'}}><Logo size={32} /></NavLink>
         {items.map(([to, Icon, label]) => (
-          <NavLink key={to} to={to} className={({isActive}) => isActive || (to==='/home' && loc.pathname==='/') ? 'active' : ''}>
-            <Icon size={20} /><span className="label">{label}</span>
+          <NavLink key={to} to={to} className={({isActive}) => isActive ? 'active' : ''}>
+            <Icon size={26} /><span className="label">{label}</span>
           </NavLink>
         ))}
-        <button className="create-plus" onClick={() => setCreateOpen(true)}><span className="label">Post</span></button>
+        <button className="navlink" style={{ position: 'relative' }} onClick={() => setMore(m => !m)}>
+          <MoreHorizontal size={26} /><span className="label">More</span>
+        </button>
+        {more && (
+          <div className="more-pop">
+            <NavLink to="/studio" onClick={() => setMore(false)}>Chatra Studio</NavLink>
+            <NavLink to="/channels" onClick={() => setMore(false)}>Channels</NavLink>
+            <NavLink to="/settings" onClick={() => setMore(false)}>Settings and privacy</NavLink>
+            <NavLink to="/help" onClick={() => setMore(false)}>Help Center</NavLink>
+            <NavLink to="/docs" onClick={() => setMore(false)}>Display / docs</NavLink>
+            <button onClick={() => { clearSession(); nav('/') }}>Log out</button>
+          </div>
+        )}
+        <button className="create-plus" style={{ background: '#fff', color: '#0f1419' }} onClick={() => setCreateOpen(true)}><span className="label">Post</span></button>
+        <NavLink to="/profile" className="nav-user">
+          <div className="avatar">{(user?.handle || 'Y')[0].toUpperCase()}</div>
+          <span className="label"><b>{user?.nick || user?.first}</b><div className="muted">@{user?.handle}</div></span>
+        </NavLink>
       </aside>
       <main className="main">{children}</main>
-      <aside className="rail">
-        <div className="search" onClick={() => nav('/explore')}>
-          <Search size={16} />
-          <input readOnly placeholder="Search people, posts, channels" />
-        </div>
-        <WhoToFollow />
-      </aside>
+      {!hideRail && (
+        <aside className="rail">
+          <div className="search" onClick={() => nav('/explore')}>
+            <Search size={16} />
+            <input readOnly placeholder="Search" />
+          </div>
+          <div className="card" style={{ marginTop: 16 }}>
+            <b>Subscribe to Premium</b>
+            <p className="muted" style={{ margin: '8px 0' }}>Unlock verification and creator tools. Eligibility is not forced reach.</p>
+            <NavLink to="/plans" className="btn btn-blue" style={{ width: 'auto', display: 'inline-flex', padding: '8px 18px' }}>Subscribe</NavLink>
+          </div>
+          <WhoToFollow />
+        </aside>
+      )}
       {createOpen && <CreateModal onClose={() => setCreateOpen(false)} />}
     </div>
   )
@@ -424,9 +452,15 @@ function HomeFeed() {
         {tabs.map(t => <button key={t} className={tab===t?'on':''} onClick={()=>setTab(t)}>{t}</button>)}
       </div>
       <div className="composer">
-        <textarea placeholder="What's happening?" value={draft} onChange={e=>setDraft(e.target.value)} />
-        <div style={{display:'flex',justifyContent:'flex-end'}}>
-          <button className="btn btn-primary" style={{width:'auto',background:'#1d9bf0',color:'#fff',padding:'8px 16px'}} onClick={publish}>Post</button>
+        <div style={{display:'grid',gridTemplateColumns:'40px 1fr',gap:12}}>
+          <div className="avatar">{(user?.handle||'Y')[0].toUpperCase()}</div>
+          <div>
+            <textarea placeholder="What's happening?" value={draft} onChange={e=>setDraft(e.target.value)} />
+            <div className="composer-tools">
+              <div className="icons"><Image size={18}/><BarChart2 size={18}/><Smile size={18}/><Calendar size={18}/><MapPin size={18}/></div>
+              <button className="btn btn-blue" style={{width:'auto',padding:'8px 16px',opacity: draft.trim()?1:.5}} onClick={publish}>Post</button>
+            </div>
+          </div>
         </div>
       </div>
       {filtered.map(p => (
@@ -594,6 +628,9 @@ function Profile() {
 }
 
 function Settings() {
+  return <SettingsHub />
+}
+function SettingsLegacy() {
   const nav = useNavigate()
   const user = loadSession()?.user
   return (
@@ -753,8 +790,10 @@ export default function App() {
       <Route path="/channels" element={<RequireAuth><Shell><Channels /></Shell></RequireAuth>} />
       <Route path="/profile" element={<RequireAuth><Shell><Profile /></Shell></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><Shell><Settings /></Shell></RequireAuth>} />
+      <Route path="/settings/:group" element={<RequireAuth><Shell><Settings /></Shell></RequireAuth>} />
+      <Route path="/lists" element={<RequireAuth><Shell><ListsPage /></Shell></RequireAuth>} />
       <Route path="/studio" element={<RequireAuth><Shell><Studio /></Shell></RequireAuth>} />
-      <Route path="/plans" element={<RequireAuth><Shell><Plans /></Shell></RequireAuth>} />
+      <Route path="/plans" element={<RequireAuth><Shell><PremiumPage /></Shell></RequireAuth>} />
       <Route path="/privacy" element={<RequireAuth><Shell><Privacy /></Shell></RequireAuth>} />
       <Route path="/security" element={<RequireAuth><Shell><Security /></Shell></RequireAuth>} />
       <Route path="/delete" element={<RequireAuth><Shell><DeleteAccount /></Shell></RequireAuth>} />
