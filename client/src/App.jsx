@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { NavLink, Route, Routes, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import {
-  Home, Compass, MessageCircle, Bell, Bookmark, Users, Radio, User, Settings as SettingsIcon,
-  Search, Plus, Heart, ThumbsDown, MessageSquare, Repeat2, Share2, MoreHorizontal, List, Sparkles, Image, Smile, MapPin, Calendar, BarChart2,
-  Shield, BarChart3, Video, Mic, Newspaper, Calendar, Hash
+  Home, Bell, Bookmark, Users, User,
+  Search, Heart, ThumbsDown, MessageSquare, Repeat2, Share2, MoreHorizontal,
+  List, Sparkles, Image, Smile, MapPin, Calendar, BarChart2, MessageCircle
 } from 'lucide-react'
 import { INTERESTS, PLANS } from './data'
 import { loadSession, saveSession, clearSession, ageFromDob, usernameOk } from './store'
